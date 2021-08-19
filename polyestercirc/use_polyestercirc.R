@@ -3,9 +3,9 @@
 #note that the extra code significantly decreases the speed of the algorithm 
 
 library("scales")
-library("Biostrings", lib.loc="~/R/x86_64-pc-linux-gnu-library/3.4")
-library("polyester", lib.loc="~/R/x86_64-pc-linux-gnu-library/3.4")
-#library("polyestercirc", lib.loc="~/R/x86_64-pc-linux-gnu-library/3.4")
+library("Biostrings")
+library("polyester")
+
 
 countToTpm <- function(counts, effLen)
 {
