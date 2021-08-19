@@ -1,0 +1,51 @@
+Package: CYCLeR
+Type: Package
+Title: CircRNA transcriptome assembly tool 
+Version: 1.3
+Authors@R: person("Stefan", "Stefanov", email = "stivbio@gmail.com", role = c("cre", "aut"))
+Description: CYCLeR is a software package for assembly of circRNA transcripts from 
+	     	RNA-seq data. Takes a set of BSJ prediction files and RNA-seq BAM files as an input
+		and outputs circRNA trascnripts as FASTA, GTF and flat annotation files. The tools 
+		also outputs a padded FASTA to serve as an index for transcript EM abundance estimation.  
+License: GNU General Public License (v3)
+LazyData: yes
+Depends:
+	R,
+    	Rsamtools,
+    	SummarizedExperiment,
+    	methods,
+	tidyverse,
+	SGSeq,
+	igraph,
+	DEXSeq,
+	polyester
+Imports:
+    	AnnotationDbi,
+    	BiocGenerics,
+    	Biostrings,
+    	GenomicAlignments,
+    	GenomicFeatures,
+    	GenomeInfoDb,
+    	RUnit,
+    	S4Vectors,
+    	grDevices,
+    	graphics,
+    	igraph,
+    	parallel,
+    	rtracklayer,
+    	stats,
+	tidyverse,
+	SGSeq,
+	igraph,
+	DEXSeq,
+	polyester
+Suggests:
+    	BiocStyle,
+    	BSgenome.Hsapiens.UCSC.hg38,
+    	TxDb.Hsapiens.UCSC.hg38.knownGene,
+    	knitr,
+    	rmarkdown
+VignetteBuilder: knitr
+biocViews: TranscriptomeAssembly, RNASeq, Transcription
+RoxygenNote: 7.1.1
+Encoding: UTF-8
