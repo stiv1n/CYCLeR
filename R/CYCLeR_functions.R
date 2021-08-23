@@ -288,11 +288,11 @@ recount.features<-function(full_sg,sample_table){
   saf.fc<-saf.counts$counts
   saf.fc
 }
-get.seqs<-function(full_sg, bs_genome=Hsapiens){
+get.seqs<-function(full_sg, bs_genome=Dmelanogaster){
   seqs<-unname(BSgenome::getSeq(bs_genome, paste0("chr",full_sg@seqnames), start = start(full_sg), end = end(full_sg), strand=strand(full_sg),as.character=T))
   seqs
 }
-get.seqs.corrected<-function(full_sg, bs_genome=Hsapiens){
+get.seqs.corrected<-function(full_sg, bs_genome=Dmelanogaster){
   seqs<-get.seqs(full_sg,bs_genome)
   short_ranges<-full_sg[width(full_sg)<35]
   long_ranges<-full_sg[!width(full_sg)<35]
@@ -301,7 +301,7 @@ get.seqs.corrected<-function(full_sg, bs_genome=Hsapiens){
   seqs[width(full_sg)<35]<-corrected.seqs
   seqs
 }
-get.seqs.positive<-function(full_sg, bs_genome=Hsapiens){
+get.seqs.positive<-function(full_sg, bs_genome=Dmelanogaster){
   strand(full_sg)<-"+"
   get.seqs(full_sg,bs_genome)
 }
