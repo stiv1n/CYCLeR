@@ -67,6 +67,7 @@ BSJ_sg<-make.BSJ.sg(circ_sg,BSJ_gr)
 #get the correct genome for sequence info
 bs_genome=Dmelanogaster
 #RPKM calculation for exons
+seqs<-get.seqs(full_sg,bs_genome)
 full_rpkm<-RPKM.calc(full_fc, full_sg, BSJ_gr, bs_genome=bs_genome , sample_table=sample_table, feature_type ="e", gc_correction = T)
 lin_rpkm<-full_rpkm[full_sg%outside%BSJ_gr,]
 #extracting circ specific counts
