@@ -243,23 +243,23 @@ make.BSJ.sg<-function(circ_sg,BSJ_gr){
 ##' @author Stefan Stefanov
 ##' 
 ##' @export
-filter.bam<-function(BSJ_gr,sample_table,samtools_prefix){
+filter_bam<-function(BSJ_gr,sample_table,samtools_prefix){
   #gn_circ<-gene_ranges[gene_ranges%over%BSJ_gr]
   #unannot<-BSJ_gr[BSJ_gr%outside%gene_ranges]
   #filter_ranges<-c(gn_circ,unannot)
-  bed_file<-paste0(bam_file_prefix,"BSJ.bed")
+  bed_file<-paste0(bam_file_prefix,"/BSJ.bed")
   #export.bed(con = bed_file,object =  filter_ranges)
-  export.bed(con = bed_file,object =  BSJ_gr)
+  rtracklayer::export.bed(con = bed_file,object =  BSJ_gr)
   #now we need to use the bed file to filter the bam files; i suggest doing it directly in the command line 
   list_file<-paste0(bam_file_prefix,"list")
   write(sample_table$sample_name,list_file)
   print("Files are trimming")
-  trim_command<-paste(paste0(samtools_prefix,"samtools view -b -L ",bed_file," ", sample_table$file_bam," > ",bam_file_prefix,sample_table$sample_name,"_sorted_trimmed.bam"), collapse = "; ")
+  trim_command<-paste(paste0(samtools_prefix,"samtools view -b -L ",bed_file," ", sample_table$file_bam," > ",bam_file_prefix,"/",sample_table$sample_name,"_sorted_trimmed.bam"), collapse = "; ")
   system(trim_command)
   print("Files are indexing")
-  index_command<-paste(paste0(samtools_prefix,"samtools index ",bam_file_prefix,sample_table$sample_name,"_sorted_trimmed.bam"), collapse = "; ")
+  index_command<-paste(paste0(samtools_prefix,"samtools index ",bam_file_prefix,"/",sample_table$sample_name,"_sorted_trimmed.bam"), collapse = "; ")
   system(index_command)
-  trimmed_bams<-BamFileList(gsub("sorted", "sorted_trimmed", sample_table$file_bam), asMates = F)
+  trimmed_bams<-BamFileList(paste0(bam_file_prefix,"/",sample_table$sample_name,"_sorted_trimmed.bam"), asMates = F)
   trimmed_bams
 }
 ##' A wrapper function for Rsubread
@@ -267,27 +267,40 @@ filter.bam<-function(BSJ_gr,sample_table,samtools_prefix){
 ##' This function performs requantification of the exon bins with specifically selected parameters
 ##' 
 ##' @title Re-count of the reads per exon bin
-##' @param full_sg a \code{SGSeq} obeject of exon bins
+##' @param full_sg a \code{SGSeq} object of exon bins
 ##' @param sample_table sample table formatted according to the manual,
 ##'   Must contain \dQuote{sample_name} \dQuote{treatment} \dQuote{file_bam} \dQuote{lib_size} 
 ##'   \dQuote{read_len}; NB the values in column \dQuote{treatment} can only be \dQuote{control} and 
 ##'   \dQuote{enriched}
+##' @param paired_end a binary for pair-end info
 ##' @return \code{BAMFileList} object with info on the trimmed files 
 ##' @keywords Bam Filter
 ##' @author Stefan Stefanov
 ##' 
 ##' @export
-recount.features<-function(full_sg,sample_table){
+recount.features<-function(full_sg,sample_table,paired_end=T){
   feature_info<-as.data.frame(full_sg,stringsAsFactors = F)
   # we make a feature reference for counting
   saf<-feature_info[feature_info$type=="E",c("featureID","seqnames","start","end","strand")]
   colnames(saf)<- c("GeneID",		"Chr",	"Start",	"End",	"Strand")
   #saf$GeneID<-c(1,2,3,4)
-  saf.counts<-Rsubread::featureCounts(gsub("markedProcessed.out", "sorted_trimmed", sample_table$file_bam), annot.ext=saf, isPairedEnd=F,  countChimericFragments= T, 
+  saf.counts<-Rsubread::featureCounts(gsub("markedProcessed.out", "sorted_trimmed", sample_table$file_bam), annot.ext=saf, isPairedEnd=paired_end,  countChimericFragments= T, 
                                       countMultiMappingReads =T ,juncCounts=T,allowMultiOverlap=T)
   saf.fc<-saf.counts$counts
   saf.fc
 }
+##' A wrapper function for BSgenome subsequencing
+##'
+##' Extracts sequence based on \code{SGSeq} object and \dQuote{BSgenome} name
+##' 
+##' @title Extract sequence per exon bin
+##' @param full_sg a \code{SGSeq} object of exon bins
+##' @param bs_genome \dQuote{BSgenome} name
+##' @return sequence list 
+##' @keywords seqs
+##' @author Stefan Stefanov
+##' 
+##' @export
 get.seqs<-function(full_sg, bs_genome=Dmelanogaster){
   seqs<-unname(BSgenome::getSeq(bs_genome, paste0("chr",full_sg@seqnames), start = start(full_sg), end = end(full_sg), strand=strand(full_sg),as.character=T))
   seqs
@@ -463,6 +476,19 @@ prep.output<-function(transcript_features,circ_exons){
   }
   csp.results
 }
+##' Creation of GTF based on CYCLeR results 
+##'
+##' This function takes the 
+##' 
+##' @title Creation of GTF based on CYCLeR results 
+##' @param qics CYCLeR table  of intermediate results
+##' @param circ_exons \code{SGSeq} object supplying feature info
+##' @param annot_list ORG package; soon to be expanded 
+##' @return GTF-like table
+##' @keywords GTF
+##' @author Stefan Stefanov
+##' 
+##' @export
 prep.output.gtf<-function(qics_out,circ_exons,annot_list=NULL){
   #check if annotation is given 
   if(is.null(annot_list)){
@@ -708,7 +734,7 @@ transcripts.per.sample<-function(i){
 ##' @author Stefan Stefanov
 ##' 
 ##' @export
-merge.qics<-function(qics1,qics2){
+merge_qics<-function(qics1,qics2){
   qics_out_merged<-rbind(qics1,qics2)
   qics_out_merged$circID<-1
   qics_out_merged<-unique(qics_out_merged)
@@ -718,10 +744,9 @@ merge.qics<-function(qics1,qics2){
   c<-b[!duplicated(b$seq),]
   qics_out_merged<-rbind(a,c)
   qics_out_merged<-qics_out_merged[order(qics_out_merged$gene),]
-  qics_out_merged
   qics_out_merged$chr<-sgfc_pred@rowRanges@seqnames@values[qics_out_merged$chr]
   qics_out_merged$circID<-paste(1:length(qics_out_merged$circID),qics_out_merged$chr,qics_out_merged$start,qics_out_merged$end, sep = "_")
-  
+  qics_out_merged
 }
 merge.fasta<-function(qics_fa,known_fa){
   work_fa<-setdiff(qics_fa,known_fa)

@@ -1,6 +1,6 @@
 bam_file_prefix<-system.file("extdata", package = "CYCLeR")
 filenames<-c("sample1_75","sample2_75","sample3_75","sample4_75") 
-BSJ_files_ciri<-paste0(BSJ_files_prefix,"/",filenames) 
+BSJ_files_ciri<-paste0(bam_file_prefix,"/",filenames) 
 bam_files<-paste0(bam_file_prefix,"/",filenames,".bam") 
 #mark the samples control and enriched or bare the consequences   
 sample_table<-data.frame(filenames,c("control","control","enriched","enriched"),bam_files,stringsAsFactors = F) 
@@ -36,7 +36,8 @@ BSJ_set<-BSJ_set[!grepl("mitochondrion",BSJ_set)]
 #converting the BSJ set into a GRanges object 
 BSJ_gr<-make.BSJ.gr(BSJ_set)
 ####################################################
-#get the gene/transcript info
+#get the gene/transcript info; we heavily suggest users to familiarize themselves with the TxDb packages
+library("TxDb.Dmelanogaster.UCSC.dm6.ensGene")
 #restoreSeqlevels(txdb)
 txdb <- TxDb.Dmelanogaster.UCSC.dm6.ensGene
 txdb <- keepSeqlevels(txdb, c("chr2L","chr2R","chr3R","chr3L","chr4","chrX","chrY"))
@@ -46,7 +47,7 @@ txf <- convertToTxFeatures(txdb)
 #asnnotation as sg-object
 sgf <- convertToSGFeatures(txf)
 ###################################################
-samtools_prefix<-"/home/sstefan/software/samtools-1.10/bin/"
+samtools_prefix<-""
 trimmed_bams<-filter.bam(BSJ_gr,sample_table,samtools_prefix)
 sc@listData[["file_bam"]]<-trimmed_bams
 ###################################################
@@ -65,10 +66,11 @@ lin_sg<-full_sg[full_sg%outside%BSJ_gr] #includes features outside of BSJ enclos
 BSJ_sg<-make.BSJ.sg(circ_sg,BSJ_gr)
 #full_fc<-count_matrix[full_sg@featureID,]
 #get the correct genome for sequence info
+#requires the appropriate BSgenome library 
 bs_genome=Dmelanogaster
 #RPKM calculation for exons
 seqs<-get.seqs(full_sg,bs_genome)
-full_rpkm<-RPKM.calc(full_fc, full_sg, BSJ_gr, bs_genome=bs_genome , sample_table=sample_table, feature_type ="e", gc_correction = T)
+full_rpkm<-RPKM.calc(full_fc, full_sg, BSJ_gr, bs_genome=bs_genome , sample_table=sample_table, feature_type ="e", gc_correction = F)
 lin_rpkm<-full_rpkm[full_sg%outside%BSJ_gr,]
 #extracting circ specific counts
 circ_fc_adj<-full_rpkm[full_sg%over%BSJ_gr,]
@@ -99,8 +101,8 @@ circ_junc_counts<-junc_rpkm[!circ_sg_j@featureID%in%deplted_j,]
 circ_junc_counts[circ_junc_counts==0]<-1
 colnames(circ_junc_counts)<-sample_table$sample_name
 
-qics_out1<-transcripts.per.sample(sample3_75)
-qics_out2<-transcripts.per.sample(sample3_75)
+qics_out1<-transcripts.per.sample("sample3_75")
+qics_out2<-transcripts.per.sample("sample4_75")
 qics_out_final<-merge.qics(qics_out1,qics_out2)
 
 gtf.table<-prep.output.gtf(qics_out_final,circ_exons)
