@@ -125,7 +125,7 @@ combine.two.BSJ.tables<-function(ce_bsjs,ciri_bsjs){
 ##' Convert BSJ string to \code{GRanges} obejct
 ##' 
 ##' @title Convert BSJ string to GRanges obejct
-##' @param BSJ_set a list of BSJ ID records procudes by \code{process.BSJs} or \code{combine.two.BSJ.tables}
+##' @param BSJ_set a list of BSJ ID records procudes by \code{process_BSJs} or \code{combine.two.BSJ.tables}
 ##' @return \code{GRanges} object indicating BSJ loci 
 ##' @keywords GRanges BSJ
 ##' @author Stefan Stefanov
