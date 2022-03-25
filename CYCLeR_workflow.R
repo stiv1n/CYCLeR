@@ -114,7 +114,7 @@ names(qics_out_fa)<-qics_out_final$circID
 extended_seq<-paste0(qics_out_final$seq,substr(qics_out_final$seq,1,30),strrep("N",mean(sc@listData$frag_length[sample_table$treatment=="enriched"])))
 qics_out_fa<-DNAStringSet(extended_seq)
 names(qics_out_fa)<-qics_out_final$circID
-writeXStringSet(qics_out_fa,'/home/sstefan/data/NAR/circ.fa')
+writeXStringSet(qics_out_fa,'circ.fa')
 #if you have a known set of circRNA in FASTA format the CYCLeR output can be combined with it
 fasta_circ<-readDNAStringSet("...")
 final_ref_fa<-merge_fasta(qics_out_fa,fasta_circ)
