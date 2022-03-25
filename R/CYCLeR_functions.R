@@ -79,10 +79,13 @@ read.tsv.file<-function(file_name){
 ##' @keywords filter BSJ
 ##' @author Stefan Stefanov
 ##' @export
-process.BSJs<-function(cdf,sample_table){
+process_BSJs<-function(cdf,sample_table){
   #stands for circular data frame
   cdf[is.na(cdf)] <- 0
   #cdf<-column_to_rownames(cdf,var = "circ_id")
+  sample_index<-c(sample_table$sample_name[sample_table$treatment=="enriched"])
+  cdf2<-cdf[,sample_index]
+  cdf<-cdf[rowSums(cdf2>1)>0,]
   cdf[,sample_table$sample_name]<-(cdf[,sample_table$sample_name]/sample_table$lib_size)*10e6
   #cdf<-rownames_to_column(cdf,var = "circ_id")
   cdf$meanc<-rowMeans(cdf[,c(sample_table$sample_name[sample_table$treatment=="control"])])
@@ -177,8 +180,8 @@ plotRanges2 <- function(...) {
 ##' @author Stefan Stefanov
 ##' 
 ##' @export
-overlap.SG.BSJ<-function(sgfc_pred,BSJ_gr){
-  sg_gr<-rowRanges(sgfc_pred) #stands for splice graph granges
+overlap.SG.BSJ<-function(sgfc_pred,BSJ_gr,sg_annot){
+  sg_gr<-rowRanges(sgfc_pred) #first we process the predicted features
   sg_gr_e<-sg_gr[sg_gr@type=="E"]
 
   BSJ_sg<-SGFeatures(BSJ_gr,type=rep("E",length(BSJ_gr)),splice5p =rep(F,length(BSJ_gr)),
@@ -189,7 +192,11 @@ overlap.SG.BSJ<-function(sgfc_pred,BSJ_gr){
   sg_gr_e2<-sg_gr_e[sg_gr_e%over%BSJ_sg]  #this is to remove some mapping artifacts
   sg_gr_e<-sg_gr_e[sg_gr_e@geneID%in%sg_gr_e2@geneID] #and keep only the genes that overlap with BSJ regions
   #BSJ_sg2<-GenomicRanges::reduce(BSJ_sg)
-  combined<-c(BSJ_sg,sg_gr_e)
+  sg_an<-sg_annot #the same for annotated features 
+  sg_an_e<-sg_an[sg_an@type=="E"]
+  sg_an_e2<-sg_an_e[sg_an_e%over%BSJ_sg]  #this is to remove some mapping artifacts
+  sg_an_e<-sg_an_e[sg_an_e@geneID%in%sg_an_e2@geneID] #and keep only the genes that overlap with BSJ region
+  combined<-c(BSJ_sg,sg_gr_e,sg_an_e)
   #combined2<-c(BSJ_sg2,sg_gr_e)
   disjoint_ranges<-GenomicRanges::disjoin(combined, with.revmap=T)
   #disjoint_ranges2<-GenomicRanges::disjoin(combined2, with.revmap=T)
@@ -284,8 +291,8 @@ recount.features<-function(full_sg,sample_table,paired_end=T){
   saf<-feature_info[feature_info$type=="E",c("featureID","seqnames","start","end","strand")]
   colnames(saf)<- c("GeneID",		"Chr",	"Start",	"End",	"Strand")
   #saf$GeneID<-c(1,2,3,4)
-  saf.counts<-Rsubread::featureCounts(gsub("markedProcessed.out", "sorted_trimmed", sample_table$file_bam), annot.ext=saf, isPairedEnd=paired_end,  countChimericFragments= T, 
-                                      countMultiMappingReads =T ,juncCounts=T,allowMultiOverlap=T)
+  saf.counts<-Rsubread::featureCounts(sample_table$file_bam, annot.ext=saf, isPairedEnd=paired_end,  countChimericFragments= T, 
+                                      countMultiMappingReads =T ,juncCounts=T,countReadPairs=F,requireBothEndsMapped=F,allowMultiOverlap=T)
   saf.fc<-saf.counts$counts
   saf.fc
 }
@@ -445,6 +452,7 @@ find.depleted.features<-function(circ_fc_adj,sample_table,circ_sg, test="DEX"){#
     feature_dex_res = as.data.frame(DEXSeqResults( feature_dex ))
     #filtering of the enriched features
     feature_dex_res_depleted<-feature_dex_res$featureID[feature_dex_res$log2fold_enriched_control<(-1)&feature_dex_res$padj<=0.005]
+    #feature_dex_res_depleted<-feature_dex_res$featureID[feature_dex_res$log2fold_enriched_control<(-0.5)&feature_dex_res$padj<=0.05]
     #feature_dex_res_depleted_extra<-feature_dex_res$featureID[feature_dex_res$log2fold_enriched_control<(-1)]
     #feature_dex<-union(feature_dex_res_depleted,feature_dex_res_depleted_extra)
     feature_dex_res_depleted<-feature_dex_res_depleted[!is.na(feature_dex_res_depleted)]
@@ -561,12 +569,12 @@ assemble.transcripts.per.sample<-function(i){
   size_factor<-median(ratios)
   #we apply the size factor 
   circ_junc_counts[,i]<-round(circ_junc_counts[,i]/size_factor)
-  
+  #print(circ_junc_counts[1,i])
   #########################################
   #start recontruction here
   #we need to create the splice graph 
   transcript_features<-c()
-  #it is OK to use for loops here since there should not be more than 5000 iterations 
+  #it is OK to use for loops here since there should not be more than 10000 iterations 
   for(j in unique(circ_exons@geneID)){
     #j=11 #for now
     #print(j)
@@ -589,6 +597,10 @@ assemble.transcripts.per.sample<-function(i){
     #creation of the graph
     sg_exons_df<-sg_exons_df[,c("featureID","start","end","counts")]
     sg_junc_df<-sg_junc_df[,c("featureID","start","end","counts")]
+    #sg_junc_df$counts[sg_junc_df$counts<min(sg_exons_df$counts)]<-round(min(sg_exons_df$counts)+0.1*avg_weight_exons_circ)
+    #sg_exons_df$counts[sg_exons_df$featureID%in%edge_features]<-round(min(sg_exons_df$counts)+0.1*avg_weight_exons_circ)
+    
+    #sg_junc_df$counts<-rep(23031,length(sg_junc_df$counts))
     sg_df<-rbind(sg_exons_df,sg_junc_df)
     #adjusting the counts; avoiding retained introns 
     ###sg_df$counts[!sg_df$featureID%in%feature_id_ri]<-(sg_df$counts-avg_weight_exons_lin)[!sg_df$featureID%in%feature_id_ri]
@@ -654,6 +666,7 @@ assemble.transcripts.per.sample<-function(i){
         #increasing a tracker counter when a circle is used 
         tracking_circ[tracking_circ$chr==work_circ$chr&tracking_circ$start==work_circ$start&tracking_circ$end==work_circ$end,"used"]<-tracking_circ[tracking_circ$chr==work_circ$chr&tracking_circ$start==work_circ$start&tracking_circ$end==work_circ$end,"used"]+1
         curr_exons<-sg_exons_df[sg_exons_df$start>=work_circ$start&sg_exons_df$end<=work_circ$end,"featureID"]
+        edge_exons<-c(head(curr_exons,n=1),tail(curr_exons,n=1))
         if (length(curr_exons)<3) {
           transcript_features<-c(paste(curr_exons,collapse = "_"),transcript_features)
           sg_df2$weight[rownames(sg_df2)%in%curr_exons]<-(sg_df2$weight-as.numeric(min_exon_weight))[rownames(sg_df2)%in%curr_exons]
@@ -661,8 +674,11 @@ assemble.transcripts.per.sample<-function(i){
           #max flow trough the min exon ; seperated into 2 max flows 
           a<-max_flow(sg,as.character(work_circ[1,2]),as.character(min_exon[1,1]),capacity = sg_df2$weight)
           b<-max_flow(sg,as.character(min_exon[1,2]),as.character(work_circ[1,3]),capacity = sg_df2$weight)
+          #print(rownames(sg_df2)[as.logical(a$flow)])
+          #print(rownames(min_exon))
+          #print(rownames(sg_df2)[as.logical(b$flow)])
           #if the path is imposible reverse the increase in the tracker 
-          if(all(b$flow==0)|all(a$flow==0)) {
+          if((all(b$flow==0)|all(a$flow==0))&!is.element(rownames(min_exon),edge_exons)) {
             tracking_circ[tracking_circ$chr==work_circ$chr&tracking_circ$start==work_circ$start&tracking_circ$end==work_circ$end,"used"]<-tracking_circ[tracking_circ$chr==work_circ$chr&tracking_circ$start==work_circ$start&tracking_circ$end==work_circ$end,"used"]-1
             sg_df2<-sg_df2[rownames(sg_df2)!=rownames(min_exon),]
             next
@@ -684,7 +700,7 @@ assemble.transcripts.per.sample<-function(i){
         }
       }
       #print(transcript_features)
-      sg_df2<-sg_df2[sg_df2$weight>0.0001*avg_weight_exons_circ,]
+      sg_df2<-sg_df2[sg_df2$weight>0.001*avg_weight_exons_circ,]
       #sg_df2<-sg_df2[sg_df2$weight>0.05*min.feature,]
       #sg_df2$weight[sg_df2$weight>0.1*avg_weight_exons_circ&rownames(sg_df2)%in%curr_flow]<-0
       #sg_df2<-sg_df2[sg_df2$weight>0,]
@@ -699,7 +715,7 @@ assemble.transcripts.per.sample<-function(i){
         work_circ<-tracking_circ[k,]
         curr_exons<-sg_exons_df[sg_exons_df$start>=work_circ$start&sg_exons_df$end<=work_circ$end,]
         #curr_exons<-setdiff(curr_exons,feature_id_ri)
-        #curr_exons<-curr_exons[curr_exons$counts>0.2*avg_weight_exons_circ,"featureID"]
+        #curr_exons<-curr_exons[curr_exons$counts>0.002*avg_weight_exons_circ,"featureID"]
         curr_exons<-curr_exons[curr_exons$counts>0.05*avg_weight_exons_circ,"featureID"]
         transcript_features<-c(paste(curr_exons,collapse = "_"),transcript_features)
       }
@@ -748,7 +764,7 @@ merge_qics<-function(qics1,qics2){
   qics_out_merged$circID<-paste(1:length(qics_out_merged$circID),qics_out_merged$chr,qics_out_merged$start,qics_out_merged$end, sep = "_")
   qics_out_merged
 }
-merge.fasta<-function(qics_fa,known_fa){
+merge_fasta<-function(qics_fa,known_fa){
   work_fa<-setdiff(qics_fa,known_fa)
   work_fa<-union(known_fa,qics_fa)
 }
