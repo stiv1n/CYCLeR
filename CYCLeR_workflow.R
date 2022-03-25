@@ -16,12 +16,12 @@ sample_table$read_len<-sc@listData$read_length
 BSJ_files_prefix<-paste0(system.file("extdata", package = "CYCLeR"),"/ciri_")
 ciri_table<-parse.files(sample_table$sample_name,BSJ_files_prefix,"CIRI")
 colnames(ciri_table)<-c("circ_id", "sample1_75","sample2_75","sample3_75","sample4_75")
-ciri_bsjs<-process.BSJs(ciri_table,sample_table)
+ciri_bsjs<-process_BSJs(ciri_table,sample_table)
 # i would suggest combine the output of pipelines using different mapping tools 
 BSJ_files_prefix_CE<-paste0(system.file("extdata", package = "CYCLeR"),"/CE_") 
 ce_table<-parse.files(sample_table$sample_name,BSJ_files_prefix_CE,"CE") 
 colnames(ce_table)<-c("circ_id", "sample1_75","sample2_75","sample3_75","sample4_75")
-ce_bsjs<-process.BSJs(ce_table,sample_table) 
+ce_bsjs<-process_BSJs(ce_table,sample_table) 
 #we need to unify the results from the BSJ identification and counting 
 table_circ<-combine.two.BSJ.tables(ce_bsjs,ciri_bsjs) 
 #further downstream we need just the mean values for enriched samples  
