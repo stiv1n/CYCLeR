@@ -48,7 +48,7 @@ txf <- convertToTxFeatures(txdb)
 sgf <- convertToSGFeatures(txf)
 ###################################################
 samtools_prefix<-""
-trimmed_bams<-filter.bam(BSJ_gr,sample_table,samtools_prefix)
+trimmed_bams<-filter_bam(BSJ_gr,sample_table,samtools_prefix)
 sc@listData[["file_bam"]]<-trimmed_bams
 ###################################################
 sgfc_pred <- analyzeFeatures(sc, min_junction_count=2, beta =0.1 , min_n_sample=1,cores=1,verbose=F)
@@ -103,13 +103,19 @@ colnames(circ_junc_counts)<-sample_table$sample_name
 
 qics_out1<-transcripts.per.sample("sample3_75")
 qics_out2<-transcripts.per.sample("sample4_75")
-qics_out_final<-merge.qics(qics_out1,qics_out2)
+qics_out_final<-merge_qics(qics_out1,qics_out2)
 
 gtf.table<-prep.output.gtf(qics_out_final,circ_exons)
 write.table(qics_out_final[,-9],file = "dm_circles.txt", sep = "\t",row.names = F, col.names = T,quote=F)
 qics_out_fa<-DNAStringSet(qics_out_final$seq)
 names(qics_out_fa)<-qics_out_final$circID
+
+#prepping the circRNA sequences for quantification  
+extended_seq<-paste0(qics_out_final$seq,substr(qics_out_final$seq,1,30),strrep("N",mean(sc@listData$frag_length[sample_table$treatment=="enriched"])))
+qics_out_fa<-DNAStringSet(extended_seq)
+names(qics_out_fa)<-qics_out_final$circID
+writeXStringSet(qics_out_fa,'/home/sstefan/data/NAR/circ.fa')
 #if you have a known set of circRNA in FASTA format the CYCLeR output can be combined with it
 fasta_circ<-readDNAStringSet("...")
-final_ref_fa<-merge.fasta(qics_out_fa,fasta_circ)
+final_ref_fa<-merge_fasta(qics_out_fa,fasta_circ)
 writeXStringSet(qics_out_fa,'...')
