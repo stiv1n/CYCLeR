@@ -174,6 +174,7 @@ plotRanges2 <- function(...) {
 ##' @title Overlap of BSJ and a splice graph 
 ##' @param BSJ_gr a GRange of BSJ cooredinates
 ##' @param sgfc_pred \code{SGSeq} prediction object
+##' @param sg_annot \code{SGSeq} prediction object with annotation info
 ##' @return \code{SGSeq} with disjoint exon bins
 ##' @keywords GRanges overlap
 ##' @author Stefan Stefanov
