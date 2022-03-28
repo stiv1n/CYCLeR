@@ -54,7 +54,7 @@ sc@listData[["file_bam"]]<-trimmed_bams
 sgfc_pred <- analyzeFeatures(sc, min_junction_count=2, beta =0.1 , min_n_sample=1,cores=1,verbose=F)
 sgfc_pred <- SGSeq::annotate(sgfc_pred, txf)
 #extract BSJ-corrected splice graphs (sg)
-full_sg<-overlap.SG.BSJ(sgfc_pred,BSJ_gr) #includes linear and circular features
+full_sg<-overlap.SG.BSJ(sgfc_pred,BSJ_gr,sgf) #includes linear and circular features
 # we have made new feature set so we need to recount
 full_fc<-recount.features(full_sg,sample_table)#fc==feature counts
 #removing super low coverage features
