@@ -1,6 +1,5 @@
-## Copyright (C) 2021 Stefan Stefanov and Irmtraud M. Meyer (www.e-rna.org)
+## Copyright (C) 2020-2022 Stefan Stefanov and Irmtraud M. Meyer, Max Delbrueck Centre and Freie Universitaet, Berlin, Germany
 ## Contact information: irmtraud.meyer@cantab.net
-
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License,or
