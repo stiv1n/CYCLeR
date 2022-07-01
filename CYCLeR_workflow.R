@@ -1,3 +1,5 @@
+library(CYCLeR)
+#load BSJ files
 bam_file_prefix<-system.file("extdata", package = "CYCLeR")
 filenames<-c("sample1_75","sample2_75","sample3_75","sample4_75") 
 BSJ_files_ciri<-paste0(bam_file_prefix,"/",filenames) 
@@ -14,16 +16,16 @@ sample_table$read_len<-sc@listData$read_length
 
 
 BSJ_files_prefix<-paste0(system.file("extdata", package = "CYCLeR"),"/ciri_")
-ciri_table<-parse.files(sample_table$sample_name,BSJ_files_prefix,"CIRI")
+ciri_table<-parse_files(sample_table$sample_name,BSJ_files_prefix,"CIRI")
 colnames(ciri_table)<-c("circ_id", "sample1_75","sample2_75","sample3_75","sample4_75")
 ciri_bsjs<-process_BSJs(ciri_table,sample_table)
 # i would suggest combine the output of pipelines using different mapping tools 
 BSJ_files_prefix_CE<-paste0(system.file("extdata", package = "CYCLeR"),"/CE_") 
-ce_table<-parse.files(sample_table$sample_name,BSJ_files_prefix_CE,"CE") 
+ce_table<-parse_files(sample_table$sample_name,BSJ_files_prefix_CE,"CE") 
 colnames(ce_table)<-c("circ_id", "sample1_75","sample2_75","sample3_75","sample4_75")
 ce_bsjs<-process_BSJs(ce_table,sample_table) 
 #we need to unify the results from the BSJ identification and counting 
-table_circ<-combine.two.BSJ.tables(ce_bsjs,ciri_bsjs) 
+table_circ<-combine_two_BSJ_tables(ce_bsjs,ciri_bsjs) 
 #further downstream we need just the mean values for enriched samples  
 table_circ<-table_circ[,c("chr","start","end","meanRR")]
 colnames(table_circ)<-c("chr","start","end","count") 
@@ -34,7 +36,11 @@ BSJ_set<-BSJ_set[!grepl("caffold",BSJ_set)]
 BSJ_set<-BSJ_set[!grepl("mitochondrion",BSJ_set)] 
 ############################################################### 
 #converting the BSJ set into a GRanges object 
-BSJ_gr<-make.BSJ.gr(BSJ_set)
+BSJ_gr<-make_BSJ_gr(BSJ_set)
+###################################################
+samtools_prefix<-""
+trimmed_bams<-filter_bam(BSJ_gr,sample_table,samtools_prefix)
+sc@listData[["file_bam"]]<-trimmed_bams
 ####################################################
 #get the gene/transcript info; we heavily suggest users to familiarize themselves with the TxDb packages
 library("TxDb.Dmelanogaster.UCSC.dm6.ensGene")
@@ -47,75 +53,37 @@ txf <- convertToTxFeatures(txdb)
 #asnnotation as sg-object
 sgf <- convertToSGFeatures(txf)
 ###################################################
-samtools_prefix<-""
-trimmed_bams<-filter_bam(BSJ_gr,sample_table,samtools_prefix)
-sc@listData[["file_bam"]]<-trimmed_bams
-###################################################
 sgfc_pred <- analyzeFeatures(sc, min_junction_count=2, beta =0.1 , min_n_sample=1,cores=1,verbose=F)
 sgfc_pred <- SGSeq::annotate(sgfc_pred, txf)
 #extract BSJ-corrected splice graphs (sg)
-full_sg<-overlap.SG.BSJ(sgfc_pred,BSJ_gr,sgf) #includes linear and circular features
-# we have made new feature set so we need to recount
-full_fc<-recount.features(full_sg,sample_table)#fc==feature counts
-#removing super low coverage features
-full_sg<-full_sg[rowSums(as.data.frame(full_fc[,sample_table$treatment=="enriched"]))>15]
-full_fc<-full_fc[rowSums(as.data.frame(full_fc[,sample_table$treatment=="enriched"]))>15,]
-circ_sg<-full_sg[full_sg%over%BSJ_gr] #includes features within BSJ enclosed region
-lin_sg<-full_sg[full_sg%outside%BSJ_gr] #includes features outside of BSJ enclosed region
-#annotate the BSJ with the corresponding geneIDs
-BSJ_sg<-make.BSJ.sg(circ_sg,BSJ_gr)
-#full_fc<-count_matrix[full_sg@featureID,]
+full_sg<-overlap_SG_BSJ(sgfc_pred,BSJ_gr,sgf) #includes linear and circular features
+# we have made new feature set so we need to recount the exons
+full_fc<-recount_features(full_sg,sample_table)#fc==feature counts
+# time to prepare the circular splice graph
 #get the correct genome for sequence info
 #requires the appropriate BSgenome library 
+library(BSgenome.Dmelanogaster.UCSC.dm6)
 bs_genome=Dmelanogaster
-#RPKM calculation for exons
-seqs<-get.seqs(full_sg,bs_genome)
-full_rpkm<-RPKM.calc(full_fc, full_sg, BSJ_gr, bs_genome=bs_genome , sample_table=sample_table, feature_type ="e", gc_correction = F)
-lin_rpkm<-full_rpkm[full_sg%outside%BSJ_gr,]
-#extracting circ specific counts
-circ_fc_adj<-full_rpkm[full_sg%over%BSJ_gr,]
-depleted_exons<-find.depleted.features(circ_fc_adj,sample_table,circ_sg)
-#making sure that the circ edge exons remian in the mix; they coudl be depleted in case of very low levels of the circle
-edge_features<-union(full_sg@featureID[start(full_sg)%in%start(BSJ_gr)],full_sg@featureID[end(full_sg)%in%end(BSJ_gr)])
-depleted_exons<-setdiff(depleted_exons,edge_features)
-circ_exons<-circ_sg[!circ_sg@featureID%in%depleted_exons]# the final set of circRNA exons
-circ_exons_counts<-circ_fc_adj[!circ_sg@featureID%in%depleted_exons,]
-#########################################################################
-#now for junctions
-#we need to normalize the junction read counts to the exon counts
-count_matrix<-as.data.frame(counts(sgfc_pred))
-count_matrix <- apply (count_matrix, c (1, 2), function (x) {(as.integer(x))})
-############################################
-sg_gr<-rowRanges(sgfc_pred)
-sg_gr_j<-sg_gr[sg_gr@type=="J"]
-#circ_sg_j<-sg_gr_j[sg_gr_j%over%BSJ_gr]
-circ_sg_j<-sg_gr_j[unique(queryHits(findOverlaps(sg_gr_j,BSJ_gr,type = "within")))]
-count_matrix_j<-count_matrix[circ_sg_j@featureID,]
-#get the relative sequences of around a junction
-seqs_j<-paste0(seqs[match(start(circ_sg_j),end(full_sg))],seqs[match(end(circ_sg_j),start(full_sg))])
-#calculate the scaled read count for junction
-junc_rpkm<-RPKM.calc(count_matrix=count_matrix_j, sg=circ_sg_j, bsj_granges = BSJ_gr, sample_table = sample_table, feature_type = "j")
-deplted_j<-find.depleted.features(junc_rpkm,sample_table,circ_sg_j)
-circ_junc<-circ_sg_j[!circ_sg_j@featureID%in%deplted_j]
-circ_junc_counts<-junc_rpkm[!circ_sg_j@featureID%in%deplted_j,]
-circ_junc_counts[circ_junc_counts==0]<-1
-colnames(circ_junc_counts)<-sample_table$sample_name
+circ_sgfc<-prep_circular_sg(full_sg, full_fc,sgfc_pred, bs_genome, BSJ_gr, th=15)
+qics_out1<-transcripts_per_sample(sgfc=circ_sgfc,BSJ_gr = BSJ_gr,"sample3_75")
+qics_out2<-transcripts_per_sample(sgfc=circ_sgfc,BSJ_gr = BSJ_gr,"sample4_75")
+qics_out_final<-merge_qics(qics_out1,qics_out2,sgfc_pred)
 
-qics_out1<-transcripts.per.sample("sample3_75")
-qics_out2<-transcripts.per.sample("sample4_75")
-qics_out_final<-merge_qics(qics_out1,qics_out2)
-
-gtf.table<-prep.output.gtf(qics_out_final,circ_exons)
+gtf.table<-prep_output_gtf(qics_out_final,circ_sgfc)
 write.table(qics_out_final[,-9],file = "dm_circles.txt", sep = "\t",row.names = F, col.names = T,quote=F)
 qics_out_fa<-DNAStringSet(qics_out_final$seq)
 names(qics_out_fa)<-qics_out_final$circID
 
 #prepping the circRNA sequences for quantification  
 extended_seq<-paste0(qics_out_final$seq,substr(qics_out_final$seq,1,30),strrep("N",mean(sc@listData$frag_length[sample_table$treatment=="enriched"])))
-qics_out_fa<-DNAStringSet(extended_seq)
-names(qics_out_fa)<-qics_out_final$circID
-writeXStringSet(qics_out_fa,'circ.fa')
+qics_out_fa_extended<-DNAStringSet(extended_seq)
+names(qics_out_fa_extended)<-qics_out_final$circID
+writeXStringSet(qics_out_fa_extended,'circles_seq_extended_padded.fa')
 #if you have a known set of circRNA in FASTA format the CYCLeR output can be combined with it
 fasta_circ<-readDNAStringSet("...")
 final_ref_fa<-merge_fasta(qics_out_fa,fasta_circ)
-writeXStringSet(qics_out_fa,'...')
+writeXStringSet(final_ref_fa,'...')
+#the same function can be used for merging with known linear annotation for the quantification step
+fasta_lin<-readDNAStringSet("...")
+final_ref_fa<-merge_fasta(qics_out_fa_extended,fasta_lin)
+writeXStringSet(final_ref_fa,'...')
