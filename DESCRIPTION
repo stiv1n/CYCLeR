@@ -1,52 +1,28 @@
 Package: CYCLeR
 Type: Package
-Title: CircRNA transcriptome assembly tool 
-Version: 1.3.1
+Title: CircRNA transcriptome assembly tool
+Version: 1.4.2
 Authors@R: person("Stefan", "Stefanov", email = "stivbio@gmail.com", role = c("cre", "aut"))
 Description: CYCLeR is a software package for assembly of circRNA transcripts from 
 	     	RNA-seq data. Takes a set of BSJ prediction files and RNA-seq BAM files as an input
 		and outputs circRNA trascnripts as FASTA, GTF and flat annotation files. The tools 
 		also outputs a padded FASTA to serve as an index for transcript EM abundance estimation.  
 License: GNU General Public License (v3)
-LazyData: yes
-Depends:
-	R (>= 4.0),
-    	Rsamtools (>= 1.31.2),
-    	SummarizedExperiment,
-    	methods,
-	tidyverse (>= 1.3.1),
-	SGSeq (>= 1.23.2),
-	igraph (>= 1.2.6),
-	DEXSeq,
-	rtracklayer (>= 1.52.1),
-	polyester
-Imports:
-    	AnnotationDbi,
-    	BiocGenerics,
-    	Biostrings,
-    	GenomicAlignments,
-    	GenomicFeatures,
-    	GenomeInfoDb,
-    	RUnit,
-    	S4Vectors,
-    	grDevices,
-    	graphics,
-    	igraph,
-    	parallel,
-    	rtracklayer,
-    	stats,
-	tidyverse,
-	SGSeq,
-	igraph,
-	DEXSeq,
-	polyester
-Suggests:
-    	BiocStyle,
-    	BSgenome.Hsapiens.UCSC.hg38,
-    	TxDb.Hsapiens.UCSC.hg38.knownGene,
-    	knitr,
-    	rmarkdown
+Depends: R (>= 4.0), Rsamtools (>= 1.31.2), SummarizedExperiment,
+        methods, tidyverse (>= 1.3.1), SGSeq (>= 1.23.2), igraph (>=
+        1.2.6), DEXSeq, rtracklayer (>= 1.52.1), polyester, Rsubread
+        (>= 2.8.2)
+Imports: AnnotationDbi, BiocGenerics, Biostrings, GenomicAlignments,
+        GenomicFeatures, GenomeInfoDb, RUnit, S4Vectors, grDevices,
+        graphics, igraph, parallel, rtracklayer, stats, tidyverse,
+        SGSeq, igraph, DEXSeq, polyester
+Suggests: BiocStyle, BSgenome.Hsapiens.UCSC.hg38,
+        TxDb.Hsapiens.UCSC.hg38.knownGene, knitr, rmarkdown
 VignetteBuilder: knitr
 biocViews: TranscriptomeAssembly, RNASeq, Transcription
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0
 Encoding: UTF-8
+NeedsCompilation: no
+Packaged: 2022-07-01 10:28:06 UTC; stefan
+Author: Stefan Stefanov [cre, aut]
+Maintainer: Stefan Stefanov <stivbio@gmail.com>
