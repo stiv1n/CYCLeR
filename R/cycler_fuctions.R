@@ -495,6 +495,7 @@ prep_output<-function(transcript_features,circ_exons){
     csp.results[i,9]<-paste(seqs[featureID(circ_exons)%in%temp.features],collapse = "")
     if(temp.feature.table$strand[1]=="-"){ csp.results[i,9]<-as.character(reverseComplement(DNAString(csp.results[i,9])))}
   }
+  csp.results$chr<-circ_exons@seqnames@values[csp.results$chr]
   csp.results
 }
 ##' Creation of GTF based on CYCLeR results 
@@ -761,8 +762,8 @@ transcripts_per_sample<-function(sgfc,BSJ_gr,sample_name){
   circ_junc<-circ_junc[circ_junc@type=="J"]
   circ_exons<-rowRanges(sgfc)
   circ_exons<-circ_exons[circ_exons@type=="E"]
-  circ_junc_counts<-temp_count_matrix[1:length(circ_junc),]
-  circ_exons_counts<-temp_count_matrix[length(circ_junc)+1:length(circ_exons),]
+  circ_exons_counts<-temp_count_matrix[1:length(circ_exons),]
+  circ_junc_counts<-temp_count_matrix[length(circ_exons)+1:length(circ_junc),]
   transcript_features<-assemble_transcripts_per_sample(circ_exons=circ_exons,
                                                         circ_exons_counts=circ_exons_counts,
                                                         circ_junc=circ_junc,
@@ -793,7 +794,7 @@ merge_qics<-function(qics1,qics2,sgfc_pred){
   c<-b[!duplicated(b$seq),]
   qics_out_merged<-rbind(a,c)
   qics_out_merged<-qics_out_merged[order(qics_out_merged$gene),]
-  qics_out_merged$chr<-sgfc_pred@rowRanges@seqnames@values[qics_out_merged$chr]
+  #qics_out_merged$chr<-sgfc_pred@rowRanges@seqnames@values[qics_out_merged$chr]
   qics_out_merged$circID<-paste(1:length(qics_out_merged$circID),qics_out_merged$chr,qics_out_merged$start,qics_out_merged$end, sep = "_")
   qics_out_merged
 }
