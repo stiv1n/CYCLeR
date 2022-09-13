@@ -74,18 +74,19 @@ read_tsv_file<-function(file_name){
 ##'   Must contain \dQuote{sample_name} \dQuote{treatment} \dQuote{file_bam} \dQuote{lib_size} 
 ##'   \dQuote{read_len}; NB the values in column \dQuote{treatment} can only be \dQuote{control} and 
 ##'   \dQuote{enriched}
+##' @param bsj_th hard threshold on number of BSJ spanning reads in the enriched samples
 ##' @return \code{Tibble} object with combined filtered BSJ coordinate and number of junction spanning 
 ##'  reads across sample. 
 ##' @keywords filter BSJ
 ##' @author Stefan Stefanov
 ##' @export
-process_BSJs<-function(cdf,sample_table){
+process_BSJs<-function(cdf,sample_table,bsj_th=1){
   #stands for circular data frame
   cdf[is.na(cdf)] <- 0
   #cdf<-column_to_rownames(cdf,var = "circ_id")
   sample_index<-c(sample_table$sample_name[sample_table$treatment=="enriched"])
   cdf2<-cdf[,sample_index]
-  cdf<-cdf[rowSums(cdf2>1)>0,]
+  cdf<-cdf[rowSums(cdf2>bsj_th)>0,]
   cdf[,sample_table$sample_name]<-(cdf[,sample_table$sample_name]/sample_table$lib_size)*10e6
   #cdf<-rownames_to_column(cdf,var = "circ_id")
   cdf$meanc<-rowMeans(cdf[,c(sample_table$sample_name[sample_table$treatment=="control"])])
