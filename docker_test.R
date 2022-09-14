@@ -23,7 +23,7 @@ ciri_bsjs<-process_BSJs(ciri_table,sample_table)
 BSJ_files_prefix_CE<-paste0(system.file("extdata", package = "CYCLeR"),"/CE_") 
 ce_table<-parse_files(sample_table$sample_name,BSJ_files_prefix_CE,"CE") 
 colnames(ce_table)<-c("circ_id", "sample1_75","sample2_75","sample3_75","sample4_75")
-ce_bsjs<-process_BSJs(ce_table,sample_table,bsj_th=50) 
+ce_bsjs<-process_BSJs(ce_table,sample_table) 
 #we need to unify the results from the BSJ identification and counting 
 table_circ<-combine_two_BSJ_tables(ce_bsjs,ciri_bsjs) 
 #table_circ<-table_circ%>%separate(circ_id, into = c("chr","start","end","strand"),sep = "_")
@@ -41,8 +41,6 @@ BSJ_set<-BSJ_set[!grepl("mitochondrion",BSJ_set)]
 BSJ_gr<-make_BSJ_gr(BSJ_set)
 ###################################################
 samtools_prefix<-""
-samtools_prefix<-"/home/stefan/software/samtools-1.15.1/"
-
 trimmed_bams<-filter_bam(BSJ_gr,sample_table,samtools_prefix)
 sc@listData[["file_bam"]]<-trimmed_bams
 ####################################################
@@ -82,7 +80,7 @@ extended_seq<-paste0(qics_out_final$seq,substr(qics_out_final$seq,1,30),
 qics_out_fa_extended<-DNAStringSet(extended_seq)
 names(qics_out_fa_extended)<-qics_out_final$circID
 writeXStringSet(qics_out_fa_extended,'/usr/workdir/circles_seq_extended_padded.fa')
-#the same function can be used for merging with known linear annotation for the quantification step
+#merging with known linear annotation for the quantification step
 fasta_lin<-readDNAStringSet("...")
 final_ref_fa<-merge_fasta(qics_out_fa_extended,fasta_lin)
 writeXStringSet(final_ref_fa,'/usr/workdir/for_kallisto.fa')
