@@ -8,12 +8,12 @@
 The computation steps prior and post **CYCLeR** run are most efficiently run on HPC. It is very likely that any HPC in biological institute already has most of those tools installed. Just in case, a **Docker** image containing all the tools is provided.  
 NOTE: prior to running **Docker** image, make sure that ***Docker** is indeed installed and working: https://docs.docker.com/get-started/
 
-**STAR** - https://github.com/alexdobin/STAR
-**samtools** - https://sourceforge.net/projects/samtools/files/samtools/
-**kallisto** - http://pachterlab.github.io/kallisto/download
-**bwa** (needed for CIRI2) - http://bio-bwa.sourceforge.net/bwa.shtml
-**CIRI2** - https://sourceforge.net/projects/ciri/files/CIRI2/
-**CIRCexplorer2** - https://circexplorer2.readthedocs.io/en/latest/
+* **STAR** - https://github.com/alexdobin/STAR
+* **samtools** - https://sourceforge.net/projects/samtools/files/samtools/
+* **kallisto** - http://pachterlab.github.io/kallisto/download
+* **bwa** (needed for CIRI2) - http://bio-bwa.sourceforge.net/bwa.shtml
+* **CIRI2** - https://sourceforge.net/projects/ciri/files/CIRI2/
+* **CIRCexplorer2** - https://circexplorer2.readthedocs.io/en/latest/
 ```
 #Docker image with all command line tools  
 sudo docker pull stiv1n/cycler.prerequisites
