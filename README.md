@@ -22,6 +22,7 @@ sudo docker pull stiv1n/cycler.prerequisites
 For a test run, I suggest using a **Docker** container. There, all test input and all dependencies are provided. 
 The **Docker** use requires you to mount a volume - a working directory (*<local_dir>*) where the output and input would be stored.
 This container uses **RStudio server** and required login. In this case, the  username is *rstudio* the password is *guest*.
+Open a browser and type `localhost:8787`.
 ```
 sudo docker pull stiv1n/cycler
 sudo docker run --rm -ti -e PASSWORD=guest -v <local_dir>:/usr/workdir -p 8787:8787 stiv1n/cycler
