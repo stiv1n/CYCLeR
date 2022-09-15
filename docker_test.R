@@ -81,6 +81,6 @@ qics_out_fa_extended<-DNAStringSet(extended_seq)
 names(qics_out_fa_extended)<-qics_out_final$circID
 writeXStringSet(qics_out_fa_extended,'/usr/workdir/circles_seq_extended_padded.fa')
 #merging with known linear annotation for the quantification step
-fasta_lin<-readDNAStringSet("...")
-final_ref_fa<-merge_fasta(qics_out_fa_extended,fasta_lin)
-writeXStringSet(final_ref_fa,'/usr/workdir/for_kallisto.fa')
+#fasta_lin<-readDNAStringSet("...")
+#final_ref_fa<-merge_fasta(qics_out_fa_extended,fasta_lin)
+#writeXStringSet(final_ref_fa,'/usr/workdir/for_kallisto.fa')
